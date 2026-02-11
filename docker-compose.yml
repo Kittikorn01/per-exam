@@ -1,0 +1,16 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-exam
+    user: root                     # ให้เป็นหัวหน้าห้อง (แก้ Permission denied)
+    privileged: true               # ให้คุม Docker ได้
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+# 👇 ตรงนี้แหละที่หายไป! (ต้องชิดซ้ายสุด ห้ามมีย่อหน้า)
+volumes:
+  jenkins_home:

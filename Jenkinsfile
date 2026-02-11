@@ -1,7 +1,7 @@
 pipeline {
   environment {
     // 1. ไปสร้าง Credentials ชนิด Secret text ใน Jenkins ชื่อนี้ก่อน
-    VERCEL_TOKEN = credentials('vercel-token') 
+    VERCEL_TOKEN = credentials('vercel-token-exam') 
     
     // 2. เอา Project ID & Org ID จากไฟล์ .vercel/project.json ในเครื่องน้องมาใส่
     VERCEL_ORG_ID = 'team_SgJYI9s7kKGMxPAXCdhyPpGl' 
