@@ -1,49 +1,60 @@
 pipeline {
   environment {
-    // อย่าลืมสร้าง Credentials ชื่อ vercel-token ใน Jenkins ก่อนนะ
-    VERCEL_TOKEN = credentials('vercel-token-exam') 
-    
-    // ใส่ ID ของน้อง (จากไฟล์ .vercel/project.json)
-    VERCEL_ORG_ID = 'team_SgJYI9s7kKGMxPAXCdhyPpGl' 
-    VERCEL_PROJECT_ID = 'prj_qGX5c6DVKvQHT5Xbr6jFmJ516S17'
+    VERCEL_PROJECT_NAME = 'per-exam'
+    VERCEL_TOKEN = credentials('devops04-vercel-token') // ดึงจาก Jenkins
   }
-  
-  // ใช้ Docker Agent เพราะรันบนเครื่องเรา
   agent {
-    docker {
-      image 'node:20-alpine'
-      args '-v /root/.npm:/root/.npm'
+    kubernetes {
+      // This YAML defines the "Docker Container" you want to use
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: my-builder  # We will refer to this name later
+            image: node:20-alpine
+            command:
+            - cat
+            tty: true
+      '''
     }
   }
-
   stages {
     stage('Test npm') {
       steps {
-        sh 'node --version'
-        sh 'npm --version'
+        container('my-builder') {
+          sh 'npm --version'
+          sh 'node --version'
+        }
       }
     }
-
-    stage('Install Dependencies') {
-      steps {
-        sh 'npm ci' 
-      }
-    }
-
     stage('Build') {
       steps {
-        sh 'npm run build'
+        container('my-builder') {
+          sh 'npm ci'
+          //sh 'npm run build'
+        }
       }
     }
-
-    stage('Deploy to Vercel') {
+    stage('Test Build') {
       steps {
-        sh 'npm install -g vercel'
-        // Deploy แบบ Pro
-        sh """
-           vercel --prod --token=${VERCEL_TOKEN} --yes
-        """
+        container('my-builder') {
+          sh 'npm run test'
+        }
       }
     }
+    stage('Deploy') {
+      steps {
+        container('my-builder') {
+          sh 'npm install -g vercel@latest'
+          // Deploy using token-only (non-interactive)
+          sh '''
+            vercel link --project $VERCEL_PROJECT_NAME --token $VERCEL_TOKEN --yes
+            vercel --token $VERCEL_TOKEN --prod --confirm
+          '''
+        }
+      }
+    }
+ 
   }
 }
